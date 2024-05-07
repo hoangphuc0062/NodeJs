@@ -1,4 +1,5 @@
 const express = require("express");
+const dbConnect = require("./config/dbconnect");
 
 require("dotenv").config();
 
@@ -7,6 +8,8 @@ const port = process.env.PORT || 8888;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+dbConnect();
 
 app.use("/", (req, res) => {
   res.send("SERVER ONNNNN");
