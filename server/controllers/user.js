@@ -9,11 +9,16 @@ const register = asyncHandler(async (req, res) => {
       mes: "Missing inputs",
     });
   }
-  const response = await User.create(req.body);
-  return res.status(200).json({
-    sucess: response ? true : false,
-    response,
-  });
+  const user = await User.findOne({ email: email })
+  if (user)
+    throw new Error('User has already existed');
+  else {
+    const newUser = await User.create(req.body);
+    return res.status(200).json({
+      sucess: newUser ? true : false,
+      mes: newUser ? 'Register is succesful. Please login' : 'Some thing went wrong'
+    });
+  }
 });
 module.exports = {
   register,
