@@ -3,9 +3,11 @@ require("dotenv").config();
 const dbConnect = require("./config/dbconnect");
 const initRoutes = require("./routes/index");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 8888;
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

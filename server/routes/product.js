@@ -6,9 +6,10 @@ const { verifyAccessToken, isAdmin } = require("../middlewares/vertifyToken");
 
 router.use([verifyAccessToken, isAdmin]);
 
+router.get("/:pid", ctrl.getProduct);
 router.get("/", ctrl.getAllProduct);
 router.post("/create", ctrl.addProduct);
-router.delete("/", ctrl.deleteProductByAdmin);
-router.put("/", ctrl.updateProduct);
+router.delete("/:pid", ctrl.deleteProductByAdmin);
+router.put("/:pid", ctrl.updateProduct);
 
 module.exports = router;
