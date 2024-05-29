@@ -7,7 +7,12 @@ const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 8888;
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    methods: ["POST", "GET", "PUT", "DELETE"],
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
