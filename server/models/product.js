@@ -7,6 +7,12 @@ var ProductSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+    },
+    color: {
+      type: String,
+    },
     price: {
       type: Number,
       required: true,
@@ -43,4 +49,5 @@ var ProductSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
 module.exports = mongoose.model("Product", ProductSchema);
