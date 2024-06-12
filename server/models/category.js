@@ -14,12 +14,12 @@ const categorySchema = new mongoose.Schema(
     },
     parent: {
       type: mongoose.Types.ObjectId,
-      ref: "category",
+      ref: "Category",
     },
     children: [
       {
         type: mongoose.Types.ObjectId,
-        ref: "category",
+        ref: "Category",
       },
     ],
   },

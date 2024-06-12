@@ -15,3 +15,12 @@ export const handleToast = (type, message) => {
     transition: Bounce,
   });
 };
+
+export const handleToastPromise = async (promise, messages) => {
+  const response = await toast.promise(promise, {
+    pending: messages.pending,
+    success: messages.success,
+    error: messages.error,
+  });
+  return response;
+};

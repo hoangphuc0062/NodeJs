@@ -1,7 +1,7 @@
 import axios from "../axios";
 
-export const apiGetCategories = () =>
-  axios({
-    url: "/categories",
-    method: "GET",
-  });
+// export const apiGetCategories = () =>
+//   axios({
+//     url: "/categories/",
+//     method: "get",
+//   });
