@@ -6,7 +6,7 @@ import path from "../ultils/path";
 function Header() {
   const { HiPhone, MdEmail, BsFillBagFill, IoPersonCircle } = icons;
   return (
-    <div className="w-main flex justify-between border h-[100%] py-[35px]">
+    <div className="w-main flex justify-between h-[100%] py-[35px]">
       <Link to={`/${path.HOME}`}>
         <img src={logo} alt="logo" className="w-[300px] object-contain " />
       </Link>
@@ -25,7 +25,7 @@ function Header() {
           </span>
           <span>Online support: 24/7</span>
         </div>
-        <div className="flex items-center justify-center gap-2 px-4 border">
+        <div className="flex items-center justify-center gap-2 px-4 ">
           <BsFillBagFill />
           <span>0 item(s)</span>
         </div>

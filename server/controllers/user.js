@@ -1,4 +1,6 @@
 const User = require("../models/user");
+
+const Product = require("../models/product");
 const asyncHandler = require("express-async-handler");
 const {
   generateAccessToken,
@@ -8,27 +10,90 @@ const { response } = require("express");
 const jwt = require("jsonwebtoken");
 const sendMail = require("../ultils/sendMail");
 const crypto = require("crypto");
+const makeToken = require("uniquid");
+
+// const register = asyncHandler(async (req, res) => {
+//   const { email, password, firstname, lastname } = req.body;
+//   if (!email || !password || !firstname || !lastname) {
+//     return res.status(400).json({
+//       success: false,
+//       mes: "Missing inputs",
+//     });
+//   }
+//   const user = await User.findOne({ email: email });
+//   if (user) throw new Error("User has already existed");
+//   else {
+//     const newUser = await User.create(req.body);
+//     return res.status(200).json({
+//       success: newUser ? true : false,
+//       mes: newUser
+//         ? "Register is succesful. Please login"
+//         : "Some thing went wrong",
+//     });
+//   }
+// });
 
 const register = asyncHandler(async (req, res) => {
-  const { email, password, firstname, lastname } = req.body;
-  if (!email || !password || !firstname || !lastname) {
+  const { email, password, firstname, lastname, mobile } = req.body;
+  if (!email || !password || !firstname || !lastname || !mobile) {
     return res.status(400).json({
       success: false,
       mes: "Missing inputs",
     });
   }
+
   const user = await User.findOne({ email: email });
   if (user) throw new Error("User has already existed");
   else {
-    const newUser = await User.create(req.body);
+    const token = makeToken();
+    // rest of your code...
+    res.cookie(
+      "dataregister",
+      { ...req.body, token },
+      {
+        httpOnly: true,
+        maxAge: 15 * 60 * 1000,
+      }
+    );
+
+    const html = `Xin vui lòng click vào link dưới đây để hoàn tất quá trình đăng ký của bạn link này sẽ hết hạn sau 15 phút kể từ bây giờ.
+      <a href=${process.env.URL_SERVER}/api/users/finalregister/${token}>Click here</a>`;
+    const subject = `Hoàn tất đăng ký Hoàng Phúc Store Account`;
+
+    const rs = await sendMail(email, html, subject);
+
     return res.status(200).json({
-      success: newUser ? true : false,
-      mes: newUser
-        ? "Register is succesful. Please login"
-        : "Some thing went wrong",
+      success: true,
+      mes: "Please check your email to active account",
+      rs,
     });
   }
 });
+
+const finalRegister = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  const { token } = req.params;
+
+  if (!cookie || !cookie.dataregister || cookie.dataregister.token !== token) {
+    res.clearCookie("dataregister");
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  }
+
+  const newUser = await User.create({
+    email: cookie.dataregister.email,
+    password: cookie.dataregister.password,
+    firstname: cookie.dataregister.firstname,
+    lastname: cookie.dataregister.lastname,
+    mobile: cookie.dataregister.mobile,
+  });
+  res.clearCookie("dataregister");
+  if (newUser) {
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
+  } else {
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  }
+});
+
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -132,7 +197,7 @@ const logout = asyncHandler(async (req, res) => {
 // Change Password
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.query;
+  const { email } = req.body;
   if (!email) throw new Error("Missing email");
   const user = await User.findOne({ email });
   if (!user) throw new Error("User not found");
@@ -140,9 +205,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   const html = `Xin vui lòng click vào link dưới đây để thay đổi mật khẩu của bạn link này sẽ hết hạn sau 15 phút kể từ bây giờ. 
-  <a href=${process.env.URL_SERVER}/api/users/reset-password/${resetToken}>Click here</a>`;
-
-  const rs = await sendMail(email, html);
+  <a href=${process.env.CLIENT_URL}/reset-password/${resetToken}>Click here</a>`;
+  const subject = `Forgot password`;
+  const rs = await sendMail(email, html, subject);
   return res.status(200).json({
     success: true,
     rs,
@@ -172,14 +237,14 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 const getUsers = asyncHandler(async (req, res) => {
-  const response = await User.find().select("-refreshToken -password -role ");
+  const response = await User.find().select("-refreshToken");
   return res.status(200).json({
     success: response ? true : false,
     users: response,
   });
 });
 const deleteUser = asyncHandler(async (req, res) => {
-  const { _id } = req.query;
+  const { _id } = req.params;
   if (!_id) throw new Error("Missing inputs");
   const response = await User.findByIdAndDelete(_id);
   return res.status(200).json({
@@ -197,20 +262,20 @@ const updateUser = asyncHandler(async (req, res) => {
     throw new Error("Missing inputs");
   const response = await User.findByIdAndUpdate(_id, req.body, {
     new: true,
-  }).select("-password -role -refreshToken");
+  }).select("-role -refreshToken");
   return res.status(200).json({
     success: response ? true : false,
     UpdatedUser: response ? response : `Some thing went wrong`,
   });
 });
 const updateUserByAdmin = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+  const { _id } = req.params;
 
-  if (!userId || Object.keys(req.body).length === 0)
+  if (!_id || Object.keys(req.body).length === 0)
     throw new Error("Missing inputs");
-  const response = await User.findByIdAndUpdate(userId, req.body, {
+  const response = await User.findByIdAndUpdate(_id, req.body, {
     new: true,
-  }).select("-password -role -refreshToken");
+  }).select("-refreshToken");
   return res.status(200).json({
     success: response ? true : false,
     UpdatedUser: response ? response : `Some thing went wrong`,
@@ -218,8 +283,8 @@ const updateUserByAdmin = asyncHandler(async (req, res) => {
 });
 
 const addUserByAdmin = asyncHandler(async (req, res) => {
-  const { email, password, firstname, lastname } = req.body;
-  if (!email || !password || !firstname || !lastname) {
+  const { email, password, firstname, lastname, mobile } = req.body;
+  if (!email || !password || !firstname || !lastname || !mobile) {
     return res.status(400).json({
       success: false,
       mes: "Missing inputs",
@@ -238,8 +303,184 @@ const addUserByAdmin = asyncHandler(async (req, res) => {
   }
 });
 
+const updateAddress = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+
+  if (!req.body.address) throw new Error(`Missing input`);
+
+  const response = await User.findByIdAndUpdate(
+    _id,
+    { $push: { address: req.body.address } },
+    { new: true }
+  ).select("-password -role -refreshToken");
+  return res.status(200).json({
+    success: response ? true : false,
+    updatedUser: response ? response : `Some thing went wrong`,
+  });
+});
+const updateCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { pid, quantity, size, color } = req.body;
+
+  if (!pid || !quantity || !size || !color) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing input",
+    });
+  }
+
+  const user = await User.findById(_id).select("cart");
+  const productDetails = await Product.findById(pid).select(
+    "name images price"
+  );
+
+  if (!productDetails) {
+    return res.status(404).json({
+      success: false,
+      message: "Product not found",
+    });
+  }
+
+  const { name, images, price } = productDetails;
+  const image = images[0]; // Assuming you want to store only the first image
+
+  const alreadyProduct = user?.cart?.find(
+    (el) => el.pid && el.pid.toString() === pid
+  );
+
+  if (alreadyProduct) {
+    let newQuantity = Number(quantity) + alreadyProduct.quantity;
+
+    const response = await User.updateOne(
+      { _id, "cart.pid": pid },
+      {
+        $set: {
+          "cart.$.quantity": newQuantity,
+          "cart.$.name": name, // Update the product name
+          "cart.$.image": image, // Update the product image
+          "cart.$.price": price, // Update the price
+        },
+      },
+      { new: true }
+    );
+
+    return response
+      ? res.status(200).json({
+          success: true,
+          updatedUser: response,
+        })
+      : res.status(400).json({
+          success: false,
+          message: "Can't update quantity",
+        });
+  } else {
+    const response = await User.findByIdAndUpdate(
+      _id,
+      {
+        $push: {
+          cart: {
+            pid: pid,
+            quantity,
+            color,
+            size,
+            name, // Include the product name
+            image, // Include the product image
+            price, // Include the price
+          },
+        },
+      },
+      { new: true }
+    );
+
+    return response
+      ? res.status(200).json({
+          success: true,
+          updatedUser: response,
+        })
+      : res.status(400).json({
+          success: false,
+          message: "Something went wrong",
+        });
+  }
+});
+const updateQuantityInCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  var { pid, quantity } = req.body;
+
+  if (!pid || !quantity || pid.length !== quantity.length) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Missing product IDs or quantities, or their lengths do not match",
+    });
+  }
+
+  // Convert quantities to numbers
+  quantity = quantity.map(Number);
+
+  // Find user and check if products are in the cart
+  const user = await User.findById(_id).select("cart");
+
+  if (user) {
+    // Update quantity for each product
+    for (let i = 0; i < pid.length; i++) {
+      await User.updateOne(
+        { _id, "cart.pid": pid[i] },
+        {
+          $set: {
+            "cart.$.quantity": quantity[i],
+          },
+        }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Quantities updated successfully",
+    });
+  } else {
+    // Products not found in the cart
+    return res.status(404).json({
+      success: false,
+      message: "Products not found in cart",
+    });
+  }
+});
+
+const removeItemInCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { pid } = req.body;
+
+  if (!pid) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing input",
+    });
+  }
+
+  const response = await User.findByIdAndUpdate(
+    _id,
+    {
+      $pull: {
+        cart: { pid: pid },
+      },
+    },
+    { new: true }
+  );
+
+  return response
+    ? res.status(200).json({
+        success: true,
+        updatedUser: response,
+      })
+    : res.status(400).json({
+        success: false,
+        message: "Something went wrong",
+      });
+});
 module.exports = {
   register,
+  finalRegister,
   login,
   getCurrent,
   refreshAccessToken,
@@ -251,4 +492,8 @@ module.exports = {
   updateUser,
   updateUserByAdmin,
   addUserByAdmin,
+  updateAddress,
+  updateCart,
+  updateQuantityInCart,
+  removeItemInCart,
 };

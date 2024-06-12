@@ -9,7 +9,7 @@ const InputField = ({
   setInvalidFields,
 }) => {
   return (
-    <div className="w-full relative">
+    <div className="w-full flex flex-col relative">
       {value.trim() !== "" && (
         <label
           className="text-[10px] animate-slide-top-sm absolute top-0 left-[8px] "
@@ -26,7 +26,15 @@ const InputField = ({
         onChange={(e) =>
           setValue((prev) => ({ ...prev, [nameKey]: e.target.value }))
         }
+        onFocus={() => {
+          setInvalidFields([]);
+        }}
       />
+      {invalidFields?.some((el) => el.name === nameKey) && (
+        <small className="text-red-500 text-[12px]">
+          {invalidFields.find((el) => el.name === nameKey)?.mes}{" "}
+        </small>
+      )}
     </div>
   );
 };

@@ -14,7 +14,7 @@ const getProduct = asyncHandler(async (req, res) => {
 
 // Filter - sort - pagination
 const getAllProduct = asyncHandler(async (req, res) => {
-  const products = await Product.find({});
+  const products = await Product.find({}).populate("category", "name");
   return res.status(200).json({
     success: products ? true : false,
     products,
@@ -62,10 +62,46 @@ const updateProduct = asyncHandler(async (req, res) => {
   });
 });
 
+const uploadImagesProduct = asyncHandler(async (req, res) => {
+  const { name, price, description, category } = req.body;
+  let imagePaths = [];
+  if (!req.files) {
+    return res.status(400).json({
+      success: false,
+      mes: "Missing file upload",
+    });
+  }
+
+  if (!name || !price || !description || !category) {
+    return res.status(400).json({
+      success: false,
+      mes: "Missing inputs ",
+    });
+  }
+
+  if (req.files) {
+    // Handle multiple files
+    let imagePaths = req.files.map((file) => file.path);
+  }
+  if (req.file) {
+    let imagePaths = req.file.path;
+  }
+
+  const product = await Product.create({
+    ...req.body,
+    images: imagePaths,
+  });
+
+  return res.status(200).json({
+    success: true,
+    mes: product ? "Product creation is successful" : "Something went wrong",
+  });
+});
 module.exports = {
   getProduct,
   getAllProduct,
   addProduct,
   deleteProductByAdmin,
   updateProduct,
+  uploadImagesProduct,
 };

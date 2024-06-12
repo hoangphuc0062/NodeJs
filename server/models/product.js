@@ -23,7 +23,7 @@ var ProductSchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Types.ObjectId,
-      ref: "category",
+      ref: "Category",
     },
     stock: {
       type: Number,
@@ -34,7 +34,7 @@ var ProductSchema = new mongoose.Schema(
       default: 0,
     },
     images: {
-      Array,
+      type: Array,
     },
     rating: {
       type: Number,
