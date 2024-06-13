@@ -28,13 +28,27 @@ var userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "user",
+      enum: [0, 1],
+      default: 1,
     },
-    cart: {
+    cart: [
+      {
+        pid: {
+          type: mongoose.Types.ObjectId,
+          ref: "Product",
+        },
+        color: String,
+        quantity: Number,
+        price: Number,
+        size: Number,
+        name: String,
+        image: String,
+      },
+    ],
+    address: {
       type: Array,
       default: [],
     },
-    address: [{ type: mongoose.Types.ObjectId, ref: "Address" }],
     wishlist: [{ type: mongoose.Types.ObjectId, ref: "Product" }],
     isBlocked: {
       type: Boolean,
@@ -51,6 +65,14 @@ var userSchema = new mongoose.Schema(
     },
     passwordResetExprires: {
       type: String,
+    },
+    registerToken: {
+      type: String,
+    },
+    avatar: {
+      type: String,
+      default:
+        "https://asset.cloudinary.com/dgthe0zuj/426512c1702396bd962a4de573a60b15",
     },
   },
   {
